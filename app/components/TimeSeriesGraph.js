@@ -1,12 +1,11 @@
-// app/components/TimeSeriesGraph.js
 "use client";
 import React from 'react';
 import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, LineElement, PointElement, Title, Tooltip, Legend, TimeScale } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, LineElement, PointElement, Title, Tooltip, Legend, TimeScale, Filler } from 'chart.js';
 import 'chartjs-adapter-date-fns'; // Import this adapter to handle time scales
 import 'tailwindcss/tailwind.css';
 
-// Register ChartJS components
+// Register ChartJS components including Filler for area fill
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -15,7 +14,8 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  TimeScale // Register the TimeScale
+  TimeScale,
+  Filler // Register Filler for area fill
 );
 
 const TimeSeriesGraph = ({ data, attribute }) => {
@@ -44,12 +44,13 @@ const TimeSeriesGraph = ({ data, attribute }) => {
         label: attribute,
         data: values,
         borderColor: '#4CAF50',
-        backgroundColor: 'rgba(76, 175, 80, 0.2)',
+        backgroundColor: 'rgba(76, 175, 80, 0.2)', // Lighter color for fill
         borderWidth: 2,
         pointBackgroundColor: '#4CAF50',
         pointBorderColor: '#fff',
         pointBorderWidth: 1,
         pointRadius: 3,
+        fill: true, // Enable the area fill under the line
       },
     ],
   };

@@ -21,25 +21,23 @@ export default function Dashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    if (sessionId) {
-      const fetchProjectFiles = async () => {
-        const response = await fetch(API_ENDPOINTS.GET_ALL_PROJECT_FILES, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ session_id: sessionId }),
-        });
-        const data = await response.json();
-        setProjectFiles(data);
-      };
+    
+    const fetchProjectFiles = async () => {
+      const response = await fetch(API_ENDPOINTS.GET_ALL_PROJECT_FILES, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+      const data = await response.json();
+      setProjectFiles(data);
+    };
 
-      fetchProjectFiles();
-    }
+    fetchProjectFiles();
   }, [sessionId]);
 
   useEffect(() => {
-    // Start polling for profiling status when the component mounts
     let intervalId;
 
     if (sessionId) {
@@ -56,7 +54,7 @@ export default function Dashboard() {
           if (response.ok) {
             const analysisData = await response.json();
             setProfilingResults([analysisData]);
-            setProfilingMessage(''); // Clear message if results are found
+            setProfilingMessage(''); 
             setProfilingInProgress(false);
           } else if (response.status === 501) {
             setProfilingMessage('Profiling is still in progress.');
@@ -69,9 +67,8 @@ export default function Dashboard() {
           console.error("Error fetching analysis data:", error);
           setProfilingMessage('An error occurred while polling for results.');
         }
-      }, 5000); // Poll every 5 seconds
+      }, 5000); 
 
-      // Clean up interval on component unmount
       return () => clearInterval(intervalId);
     }
   }, [sessionId]);
@@ -118,11 +115,9 @@ export default function Dashboard() {
       return;
     }
 
-    // Set profiling status to true
     setProfilingInProgress(true);
     setProfilingMessage('');
 
-    // Default values for arguments
     const defaultArgs = {
       cpu_power: 0,
       memory_power: 0,
@@ -130,7 +125,6 @@ export default function Dashboard() {
       power_of_10: 0
     };
 
-    // Construct callerMetadata with default values
     const callerMetadata = {
       filepath: selectedFilePath,
       args: { 
@@ -153,7 +147,6 @@ export default function Dashboard() {
         }),
       });
 
-      // Display message to the user
       alert("Profiling is in progress. Please refrain from sending duplicate requests.");
     } catch (error) {
       console.error("Error starting profiling:", error);
@@ -164,30 +157,27 @@ export default function Dashboard() {
     const analyticsUrl = `/analytics?session_id=${sessionId}&results=${encodeURIComponent(JSON.stringify(profilingResults))}`;
     window.open(analyticsUrl, '_blank');
   };
-
+  
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center p-6">
-      <div className="bg-red-500 text-white p-4">
-        Test Tailwind
-      </div>
-      <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
-      <p className="text-xl mb-4">Session ID: {sessionId}</p>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center p-8 space-y-6">
+      <h1 className="text-4xl font-bold text-gray-800 mb-4">Dashboard</h1>
+      <p className="text-xl text-gray-600 mb-6">Session ID: <span className="font-medium">{sessionId}</span></p>
 
       <div className="flex gap-4 mb-6">
         <button
-          className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition"
+          className="bg-blue-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-blue-700 transition"
           onClick={handleUploadAnotherProject}
         >
           Upload Another Project
         </button>
         <button
-          className="bg-gray-500 py-2 px-4 rounded hover:bg-gray-600 transition"
+          className="bg-gray-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-gray-700 transition"
           onClick={toggleFilesVisibility}
         >
           {showFiles ? 'Hide' : 'Show'} Project Files
         </button>
         <button
-          className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition"
+          className="bg-green-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-green-700 transition"
           onClick={handleProcessProject}
         >
           Process Project Folder
@@ -195,16 +185,16 @@ export default function Dashboard() {
       </div>
 
       {showFiles && projectFiles && (
-        <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg p-6 space-y-6">
+        <div className="w-full max-w-5xl bg-white shadow-xl rounded-lg p-6 space-y-6">
           <ProjectFileList files={projectFiles} onFileClick={handleFileClick} />
           {selectedFilePath && (
             <div className="border-t border-gray-300 pt-6">
-              <h3 className="text-2xl font-semibold mb-2">File: {selectedFilePath}</h3>
+              <h3 className="text-2xl font-semibold text-gray-700 mb-2">File: {selectedFilePath}</h3>
               <div className="relative bg-gray-100 rounded-lg overflow-auto">
-                <pre className="whitespace-pre-wrap p-4 text-sm">{selectedFileContent}</pre>
-                <div className="absolute top-0 right-0 p-2">
+                <pre className="whitespace-pre-wrap p-4 text-sm text-gray-800">{selectedFileContent}</pre>
+                <div className="absolute top-2 right-2">
                   <button
-                    className="text-gray-600 hover:text-gray-900"
+                    className="text-gray-600 hover:text-gray-800"
                     onClick={() => setSelectedFilePath('')}
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -214,8 +204,8 @@ export default function Dashboard() {
                 </div>
               </div>
               {parseArgs[selectedFilePath] && (
-                <div className="mt-4">
-                  <h4 className="text-lg font-semibold mb-2">Parameters</h4>
+                <div className="mt-6 space-y-4">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-2">Parameters</h4>
                   {parseArgs[selectedFilePath].map((param, index) => (
                     <ParameterInput
                       key={index}
@@ -227,7 +217,7 @@ export default function Dashboard() {
                 </div>
               )}
               <button
-                className="mt-4 bg-purple-500 text-white py-2 px-4 rounded hover:bg-purple-600 transition"
+                className="mt-6 bg-purple-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-purple-700 transition"
                 onClick={handleStartProfiling}
               >
                 Start Profiling
@@ -237,18 +227,20 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg p-6 mt-6 space-y-6">
-        <h2 className="text-2xl font-semibold mb-4">Profiling Status</h2>
+      <div className="w-full max-w-5xl bg-white shadow-xl rounded-lg p-6 space-y-6 mt-6">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Profiling Status</h2>
         {profilingMessage && (
-          <p>{profilingMessage}</p>
+          <p className="text-gray-700">{profilingMessage}</p>
         )}
         {profilingResults.length > 0 && (
-          <ul>
+          <ul className="space-y-4">
             {profilingResults.map((result, index) => (
-              <li key={index} className="flex justify-between items-center mb-2">
-                <span>Profiling Completed</span>
+              <li key={index} className="flex justify-between items-center p-4 bg-gray-50 border border-gray-300 rounded-lg shadow-sm">
+                <span className="text-gray-700">Profiling Completed</span>
                 <button
-                  className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600 transition"
+                  className="bg-blue-600 text-white py-1 px-3 rounded-lg shadow-md hover:bg-blue-700 transition"
+                 
+
                   onClick={handleViewAnalytics}
                 >
                   View Analytics

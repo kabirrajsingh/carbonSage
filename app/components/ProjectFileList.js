@@ -1,6 +1,7 @@
 "use client";
 
-const renderFileTree = (files, path = '', handleFileClick) => {
+export const renderFileTree = (files, path = '', handleFileClick) => {
+ 
   const directories = new Set();
   const fileNames = [];
 
@@ -14,6 +15,8 @@ const renderFileTree = (files, path = '', handleFileClick) => {
       }
     }
   });
+  
+
 
   return (
     <ul className="list-disc pl-5 space-y-2">

@@ -1,32 +1,25 @@
-// app/upload/page.js
 "use client"; // Ensure this file is a client component
 
-import { useState ,useEffect} from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '../context/SessionContext';
 import { API_ENDPOINTS } from '../config/appConfig';
+
 export default function FileUpload() {
-  
-
-
-  const { sessionId,setSessionId } = useSession();
+  const { sessionId, setSessionId } = useSession();
   const [file, setFile] = useState(null);
   const [error, setError] = useState('');
   const router = useRouter();
 
-  useEffect(() => {
-    console.log('Session ID:', sessionId); // Check if sessionId is logged correctly
-  }, [sessionId]);
-
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
-  
+
   const handleUpload = async () => {
     if (!file) return;
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('folder', file);
 
     try {
       const response = await fetch(`${API_ENDPOINTS.UPLOAD_FILE}`, {
@@ -35,7 +28,6 @@ export default function FileUpload() {
       });
       if (response.ok) {
         const { sessionId } = await response.json();
-       
         setSessionId(sessionId);
         router.push('/dashboard');
       } else {
@@ -48,13 +40,28 @@ export default function FileUpload() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-      <h1 className="text-3xl font-bold mb-6">Upload Project</h1>
-      <input type="file" onChange={handleFileChange} />
-      <button className="btn mt-4" onClick={handleUpload}>
-        Upload
-      </button>
-      {error && <p className="text-red-500 mt-4">{error}</p>}
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
+      <div className="bg-white shadow-lg rounded-lg p-8 max-w-md mx-auto text-center">
+        <h1 className="text-4xl font-extrabold text-gray-900 mb-6">Upload Your Project</h1>
+        <p className="text-lg text-gray-600 mb-6">Select a folder to upload. This will initialize your session and allow you to access the dashboard.</p>
+        <div className="flex flex-col items-center">
+          <input 
+            type="file" 
+            onChange={handleFileChange} 
+            className="file-input mb-4 py-2 px-4 border rounded-lg shadow-md"
+            webkitdirectory="true"
+            directory="true"
+            multiple
+          />
+          <button 
+            className="btn bg-blue-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-blue-700 transition duration-300"
+            onClick={handleUpload}
+          >
+            Upload
+          </button>
+          {error && <p className="text-red-500 mt-4 text-sm">{error}</p>}
+        </div>
+      </div>
     </div>
   );
 }
