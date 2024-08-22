@@ -162,7 +162,7 @@ export default function Dashboard() {
 
   const handleViewAnalytics = () => {
     const analyticsUrl = `/analytics?session_id=${sessionId}&results=${encodeURIComponent(JSON.stringify(profilingResults))}`;
-    router.push(analyticsUrl);
+    window.open(analyticsUrl, '_blank');
   };
 
   return (

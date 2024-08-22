@@ -6,11 +6,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <SessionProvider>
+        {/* <SessionProvider> */}
           <ProjectFilesProvider>
           {children}
           </ProjectFilesProvider>
-        </SessionProvider>
+        {/* </SessionProvider> */}
       </body>
     </html>
   );
