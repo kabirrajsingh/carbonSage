@@ -1,3 +1,4 @@
+// pages/dashboard.js
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -6,8 +7,8 @@ import { useSession } from '../context/SessionContext';
 import { useProjectFiles } from '../context/ProjectFilesContext';
 import { API_ENDPOINTS } from '../config/appConfig';
 import ProjectFileList from '../components/ProjectFileList';
+import Sidebar from '../components/SideBar';
 import ParameterInput from '../components/ParameterInput';
-
 export default function Dashboard() {
   const { sessionId, logout } = useSession();
   const { projectFiles, setProjectFiles, showFiles, setShowFiles } = useProjectFiles();
@@ -21,7 +22,6 @@ export default function Dashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    
     const fetchProjectFiles = async () => {
       const response = await fetch(API_ENDPOINTS.GET_ALL_PROJECT_FILES, {
         method: 'POST',
@@ -107,7 +107,6 @@ export default function Dashboard() {
         [paramName]: value,
       },
     }));
-    console.log(parseArgs[selectedFilePath])
   };
 
   const handleStartProfiling = async () => {
@@ -134,8 +133,6 @@ export default function Dashboard() {
       },
     };
 
-    console.log("Caller Metadata:", callerMetadata);
-
     try {
       await fetch(API_ENDPOINTS.START_PROFILING, {
         method: 'POST',
@@ -158,55 +155,55 @@ export default function Dashboard() {
     const analyticsUrl = `/analytics`;
     window.open(analyticsUrl, '_blank');
   };
-  
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center p-8 space-y-6">
-      <h1 className="text-4xl font-bold text-gray-800 mb-4">Dashboard</h1>
-      <p className="text-xl text-gray-600 mb-6">Session ID: <span className="font-medium">{sessionId}</span></p>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <Sidebar files={projectFiles} onFileClick={handleFileClick} selectedFilePath={selectedFilePath} />
 
-      <div className="flex gap-4 mb-6">
-        <button
-          className="bg-blue-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-blue-700 transition"
-          onClick={handleUploadAnotherProject}
-        >
-          Upload Another Project
-        </button>
-        <button
-          className="bg-gray-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-gray-700 transition"
-          onClick={toggleFilesVisibility}
-        >
-          {showFiles ? 'Hide' : 'Show'} Project Files
-        </button>
-        <button
-          className="bg-green-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-green-700 transition"
-          onClick={handleProcessProject}
-        >
-          Process Project Folder
-        </button>
-      </div>
+      <div className="flex-1 p-8 space-y-6">
+        <h1 className="text-4xl font-bold text-gray-800 mb-4">Dashboard</h1>
+        <p className="text-xl text-gray-600 mb-6">Session ID: <span className="font-medium">{sessionId}</span></p>
 
-      {showFiles && projectFiles && (
-        <div className="w-full max-w-5xl bg-white shadow-xl rounded-lg p-6 space-y-6">
-          <ProjectFileList files={projectFiles} onFileClick={handleFileClick} />
-          {selectedFilePath && (
-            <div className="border-t border-gray-300 pt-6">
-              <h3 className="text-2xl font-semibold text-gray-700 mb-2">File: {selectedFilePath}</h3>
-              <div className="relative bg-gray-100 rounded-lg overflow-auto">
-                <pre className="whitespace-pre-wrap p-4 text-sm text-gray-800">{selectedFileContent}</pre>
-                <div className="absolute top-2 right-2">
-                  <button
-                    className="text-gray-600 hover:text-gray-800"
-                    onClick={() => setSelectedFilePath('')}
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                  </button>
-                </div>
+        <div className="flex gap-4 mb-6">
+          <button
+            className="bg-blue-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-blue-700 transition"
+            onClick={handleUploadAnotherProject}
+          >
+            Upload Another Project
+          </button>
+          {/* <button
+            className="bg-gray-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-gray-700 transition"
+            onClick={toggleFilesVisibility}
+          >
+            {showFiles ? 'Hide' : 'Show'} Project Files
+          </button> */}
+          <button
+            className="bg-green-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-green-700 transition"
+            onClick={handleProcessProject}
+          >
+            Process Project Folder
+          </button>
+        </div>
+
+        {selectedFilePath && (
+          <div className="border-t border-gray-300 pt-6">
+            <h3 className="text-2xl font-semibold text-gray-700 mb-2">File: {selectedFilePath}</h3>
+            <div className="relative bg-gray-100 rounded-lg overflow-auto">
+              <pre className="whitespace-pre-wrap p-4 text-sm text-gray-800">{selectedFileContent}</pre>
+              <div className="absolute top-2 right-2">
+                <button
+                  className="text-gray-600 hover:text-gray-800"
+                  onClick={() => setSelectedFilePath('')}
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
               </div>
-              {parseArgs[selectedFilePath] && parseArgs[selectedFilePath].length!=0 &&
-              (
-                <>
+            </div>
+            {parseArgs[selectedFilePath] && parseArgs[selectedFilePath].length !== 0 &&
+              <>
                 <div className="mt-6 space-y-4">
                   <h4 className="text-lg font-semibold text-gray-800 mb-2">Parameters</h4>
                   {parseArgs[selectedFilePath].map((param, index) => (
@@ -218,44 +215,38 @@ export default function Dashboard() {
                     />
                   ))}
                 </div>
-              
-
-              <button
-                className="mt-6 bg-purple-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-purple-700 transition"
-                onClick={handleStartProfiling}
-              >
-                
-                Start Profiling
-              </button> </>)
-}
-            </div>
-          )
-          }
-        </div>
-      )}
-
-      <div className="w-full max-w-5xl bg-white shadow-xl rounded-lg p-6 space-y-6 mt-6">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Profiling Status</h2>
-        {profilingMessage && (
-          <p className="text-gray-700">{profilingMessage}</p>
-        )}
-        {profilingResults.length > 0 && (
-          <ul className="space-y-4">
-            {profilingResults.map((result, index) => (
-              <li key={index} className="flex justify-between items-center p-4 bg-gray-50 border border-gray-300 rounded-lg shadow-sm">
-                <span className="text-gray-700">Profiling Completed</span>
                 <button
-                  className="bg-blue-600 text-white py-1 px-3 rounded-lg shadow-md hover:bg-blue-700 transition"
-                 
-
-                  onClick={handleViewAnalytics}
+                  className="mt-6 bg-purple-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-purple-700 transition"
+                  onClick={handleStartProfiling}
                 >
-                  View Analytics
+                  Start Profiling
                 </button>
-              </li>
-            ))}
-          </ul>
+              </>
+            }
+          </div>
         )}
+
+        <div className="w-full max-w-5xl bg-white shadow-xl rounded-lg p-6 space-y-6 mt-6">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Profiling Status</h2>
+          {profilingMessage && (
+            <p className="text-gray-700">{profilingMessage}</p>
+          )}
+          {profilingResults.length > 0 && (
+            <ul className="space-y-4">
+              {profilingResults.map((result, index) => (
+                <li key={index} className="flex justify-between items-center p-4 bg-gray-50 border border-gray-300 rounded-lg shadow-sm">
+                  <span className="text-gray-700">Profiling Completed</span>
+                  <button
+                    className="bg-blue-600 text-white py-1 px-3 rounded-lg shadow-md hover:bg-blue-700 transition"
+                    onClick={handleViewAnalytics}
+                  >
+                    View Analytics
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );

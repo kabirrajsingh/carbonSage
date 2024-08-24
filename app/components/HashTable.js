@@ -14,6 +14,11 @@ const HashTable = ({ functionProfileMap, codeFiles }) => {
   const [optimizedCode, setOptimizedCode] = useState(null);
   const [loading, setLoading] = useState(false);
 
+
+  useEffect(() => {
+    console.log(hashToLine)
+  }, [hashToLine])
+  
   useEffect(() => {
     if (sessionId) {
       const fetchProjectFiles = async () => {
@@ -177,10 +182,19 @@ const HashTable = ({ functionProfileMap, codeFiles }) => {
         </thead>
         <tbody>
           {currentRows.map((hash) => {
+            
             const profile = functionProfileMap[hash] ? functionProfileMap[hash][0] : {};
-            const lineData = hashToLine[hash] || {};
-            const codeSnippet = getHighlightedCodeSnippet(lineData[2], lineData[0], lineData[1]);
+            // {console.log(hash)}
+            // {console.log(hashToLine)}
+            const lineData = hashToLine && hashToLine[hash] ? hashToLine[hash] : {};
 
+            const codeSnippet = getHighlightedCodeSnippet(lineData[2], lineData[0], lineData[1]);
+            {
+            // console.log(profile)
+            //   console.log(hash)
+            //   console.log(hashToLine)
+            //   console.log(lineData)
+            }
             return (
               <tr
                 key={hash}

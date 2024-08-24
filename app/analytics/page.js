@@ -5,17 +5,19 @@ import HashTable from '../components/HashTable';
 import TimeSeriesGraph from '../components/TimeSeriesGraph';
 import { API_ENDPOINTS } from '../config/appConfig';
 import { useSession } from '../context/SessionContext';
-
+import FunctionProfileTable from '../components/FunctionProfileTable';
 const AnalyticsPage = () => {
     const { sessionId, hashToLine, setHashToLine } = useSession();
-    
     useEffect(() => {
         console.log(sessionId)
     }, [sessionId]);
     
     const [data, setData] = useState({});
+    useEffect(() => {
+      console.log(data)
+  }, [data]);
     const attributes = ['cpu_percent', 'iteration', 'pageins', 'pfaults', 'rss', 'vms'];
-
+  const [functionMap, setFunctionMap] = useState([])
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -29,9 +31,11 @@ const AnalyticsPage = () => {
                 });
                 const resultData = await responseData.json();
                 setData(resultData);
+                
 
                 // Fetch hash_to_line from /get_hash_to_lineno_fullproj if not already in context
-                if (Object.keys(hashToLine).length === 0) {
+                // if (Object.keys(hashToLine).length === 0) {
+                if(true){
                     const responseHashToLine = await fetch(API_ENDPOINTS.GET_HASH_TO_LINENO, {
                         method: 'POST',
                         headers: {
@@ -41,7 +45,7 @@ const AnalyticsPage = () => {
                     });
                     const resultHashToLine = await responseHashToLine.json();
                     const hashToLinePart = await resultHashToLine["hash_to_lineno_fullproj"];
-                    // console.log(hashToLinePart);
+                    console.log(hashToLinePart);
                     setHashToLine(hashToLinePart);
                 }
 
@@ -51,7 +55,7 @@ const AnalyticsPage = () => {
         };
 
         fetchData();
-    }, [sessionId, hashToLine, setHashToLine]);
+    }, [sessionId]);
 
     const timeSeriesData = data.profiletime_to_function || {}; 
     const functionProfileMap = data.function_profile_map || {}; 
@@ -81,6 +85,11 @@ const AnalyticsPage = () => {
                 <p className="text-xl mb-6 text-gray-700 text-center">
                     Data from: <span className="font-bold text-gray-900">{start}</span> to <span className="font-bold text-gray-900">{end}</span>
                 </p>
+                <div className="analytics-page-container">
+            
+            <FunctionProfileTable functionProfileMap={functionMap} />
+            
+        </div>
                 <div className="mb-12">
                     <h2 className="text-3xl font-extrabold mb-6 text-gray-800">Function Profile Details</h2>
                     <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
