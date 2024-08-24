@@ -2,14 +2,17 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useSession } from '../context/SessionContext';
 import { API_ENDPOINTS } from '../config/appConfig';
+import CodeModal from './CodeModal';
 
-const HashTable = ({ hashToLine, functionProfileMap, codeFiles }) => {
-  const { sessionId } = useSession();
+const HashTable = ({ functionProfileMap, codeFiles }) => {
+  const { sessionId, hashToLine } = useSession();
   const [projectFiles, setProjectFiles] = useState({});
   const [selectedCode, setSelectedCode] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10; // Adjust the number of rows per page here
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
+  const [optimizedCode, setOptimizedCode] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (sessionId) {
@@ -27,7 +30,6 @@ const HashTable = ({ hashToLine, functionProfileMap, codeFiles }) => {
           }
           const data = await response.json();
           setProjectFiles(data);
-        //   console.log('Project Files:', JSON.stringify(data, null, 2));
         } catch (error) {
           console.error('Error fetching project files:', error);
         }
@@ -46,7 +48,7 @@ const HashTable = ({ hashToLine, functionProfileMap, codeFiles }) => {
     return highlightedLines;
   };
 
-  const handleRowClick = (source, fromLine, toLine) => {
+  const handleRowClick = (source, fromLine, toLine, hash) => {
     const fullCode = projectFiles[source] || '';
     const highlightedCode = fullCode
       .split('\n')
@@ -58,22 +60,55 @@ const HashTable = ({ hashToLine, functionProfileMap, codeFiles }) => {
       })
       .join('\n');
 
-    setSelectedCode({ source, fullCode: highlightedCode });
+    setSelectedCode({ source, fullCode: highlightedCode, hash });
+  };
+
+  const handleOptimizeCode = async () => {
+    if (selectedCode) {
+      setLoading(true);
+      try {
+        const response = await fetch(API_ENDPOINTS.OPTIMIZE, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            session_id: sessionId,
+            function_id: selectedCode.hash,
+          }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to optimize code');
+        }
+        const data = await response.json();
+        setOptimizedCode(data.optimized_code);
+      } catch (error) {
+        console.error('Error optimizing code:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   const sortedRows = useMemo(() => {
     let sortableItems = [...Object.keys(functionProfileMap)];
+    
     if (sortConfig.key) {
       sortableItems.sort((a, b) => {
-        const valA = functionProfileMap[a][0][sortConfig.key];
-        const valB = functionProfileMap[b][0][sortConfig.key];
+        const profileA = functionProfileMap[a] ? functionProfileMap[a][0] : {};
+        const profileB = functionProfileMap[b] ? functionProfileMap[b][0] : {};
+
+        const valA = profileA[sortConfig.key] !== undefined ? profileA[sortConfig.key] : '';
+        const valB = profileB[sortConfig.key] !== undefined ? profileB[sortConfig.key] : '';
 
         if (valA < valB) return sortConfig.direction === 'ascending' ? -1 : 1;
         if (valA > valB) return sortConfig.direction === 'ascending' ? 1 : -1;
         return 0;
       });
     }
-    return sortableItems;
+
+    // Filter out rows that don't have a valid profile
+    return sortableItems.filter(hash => functionProfileMap[hash] && functionProfileMap[hash][0]);
   }, [functionProfileMap, sortConfig]);
 
   const indexOfLastRow = currentPage * rowsPerPage;
@@ -95,6 +130,12 @@ const HashTable = ({ hashToLine, functionProfileMap, codeFiles }) => {
       <table className="min-w-full bg-white border border-gray-300">
         <thead>
           <tr className="bg-gray-200">
+            <th
+              className="px-4 py-2 border-b cursor-pointer"
+              onClick={() => requestSort('hash')}
+            >
+              hash {sortConfig.key === 'hash' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+            </th>
             <th
               className="px-4 py-2 border-b cursor-pointer"
               onClick={() => requestSort('cpu_percent')}
@@ -136,68 +177,91 @@ const HashTable = ({ hashToLine, functionProfileMap, codeFiles }) => {
         </thead>
         <tbody>
           {currentRows.map((hash) => {
-            const profile = functionProfileMap[hash][0];
+            const profile = functionProfileMap[hash] ? functionProfileMap[hash][0] : {};
             const lineData = hashToLine[hash] || {};
             const codeSnippet = getHighlightedCodeSnippet(lineData[2], lineData[0], lineData[1]);
 
-            if (profile) {
-              return (
-                <tr
-                  key={hash}
-                  className="cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleRowClick(lineData[2], lineData[0], lineData[1])}
-                >
-                  <td className="px-4 py-2 border-b">{profile.cpu_percent || '-'}</td>
-                  <td className="px-4 py-2 border-b">{profile.iteration || '-'}</td>
-                  <td className="px-4 py-2 border-b">{profile.pageins || '-'}</td>
-                  <td className="px-4 py-2 border-b">{profile.pfaults || '-'}</td>
-                  <td className="px-4 py-2 border-b">{profile.rss || '-'}</td>
-                  <td className="px-4 py-2 border-b">{profile.vms || '-'}</td>
-                  <td
-                    className="px-4 py-2 border-b whitespace-pre-wrap font-mono text-xs"
-                    dangerouslySetInnerHTML={{ __html: codeSnippet || 'Code not available' }}
-                  />
-                </tr>
-              );
-            }
-
-            return null;
+            return (
+              <tr
+                key={hash}
+                className="cursor-pointer hover:bg-gray-100"
+                onClick={() => handleRowClick(lineData[2], lineData[0], lineData[1], hash)}
+              >
+                <td className="px-4 py-2 border-b">{hash || '-'}</td>
+                <td className="px-4 py-2 border-b">{profile.cpu_percent || '-'}</td>
+                <td className="px-4 py-2 border-b">{profile.iteration || '-'}</td>
+                <td className="px-4 py-2 border-b">{profile.pageins || '-'}</td>
+                <td className="px-4 py-2 border-b">{profile.pfaults || '-'}</td>
+                <td className="px-4 py-2 border-b">{profile.rss || '-'}</td>
+                <td className="px-4 py-2 border-b">{profile.vms || '-'}</td>
+                <td className="px-4 py-2 border-b">
+                  <div dangerouslySetInnerHTML={{ __html: codeSnippet }} />
+                </td>
+              </tr>
+            );
           })}
         </tbody>
       </table>
-
-      {/* Pagination Controls */}
-      <div className="flex justify-between mt-4">
+      <div className="flex justify-center mt-4">
         {Array.from({ length: Math.ceil(sortedRows.length / rowsPerPage) }, (_, i) => (
           <button
-            key={i + 1}
+            key={i}
             onClick={() => paginate(i + 1)}
-            className={`px-4 py-2 mx-1 ${currentPage === i + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'} rounded hover:bg-blue-600`}
+            className={`mx-1 px-3 py-1 border rounded ${currentPage === i + 1 ? 'bg-blue-500 text-white' : 'bg-white text-blue-500'}`}
           >
             {i + 1}
           </button>
         ))}
       </div>
 
-      {/* Modal for showing full code */}
       {selectedCode && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 max-w-4xl">
-            <h2 className="text-2xl font-semibold mb-4">Full Code: {selectedCode.source}</h2>
-            <div className="overflow-y-auto max-h-96"> {/* Scrollable code section */}
-              <pre
-                className="whitespace-pre-wrap font-mono text-sm border border-gray-300 p-4 rounded"
-                dangerouslySetInnerHTML={{ __html: selectedCode.fullCode }}
-              />
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 z-50 overflow-y-auto">
+        <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-8xl max-h-[100vh] overflow-hidden">
+          <h2 className="text-2xl font-bold mb-4">Code from {selectedCode.source}</h2>
+      
+          {/* Button to optimize the code */}
+          <button
+            onClick={handleOptimizeCode}
+            className={`w-full px-4 py-2 mb-4 bg-blue-500 text-white rounded hover:bg-blue-600 transition ${loading ? 'cursor-wait' : 'cursor-pointer'}`}
+          >
+            {loading ? 'Optimizing...' : 'Optimize Code'}
+          </button>
+      
+          {/* Split view for code and optimized code */}
+          <div className="flex  mb-4 ">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold mb-2">Original Code:</h3>
+              <div className="overflow-y-auto max-h-[70vh] bg-gray-100 p-4 rounded border border-gray-300">
+                <pre className="whitespace-pre-wrap">
+                  <code dangerouslySetInnerHTML={{ __html: selectedCode.fullCode }} />
+                </pre>
+              </div>
             </div>
-            <button
-              onClick={() => setSelectedCode(null)}
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Close
-            </button>
+      
+            {optimizedCode && (
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-2">Optimized Code:</h3>
+                <div className="overflow-y-auto max-h-[70vh] bg-gray-100 p-4 rounded border border-gray-300">
+                  <pre className="whitespace-pre-wrap">
+                    <code dangerouslySetInnerHTML={{ __html: optimizedCode }} />
+                  </pre>
+                </div>
+              </div>
+            )}
           </div>
+      
+          {/* Close button */}
+          <button
+            onClick={() => setSelectedCode(null)}
+            className="w-full px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition"
+          >
+            Close
+          </button>
         </div>
+      </div>
+      
+      
+      
       )}
     </div>
   );

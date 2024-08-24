@@ -107,6 +107,7 @@ export default function Dashboard() {
         [paramName]: value,
       },
     }));
+    console.log(parseArgs[selectedFilePath])
   };
 
   const handleStartProfiling = async () => {
@@ -154,7 +155,7 @@ export default function Dashboard() {
   };
 
   const handleViewAnalytics = () => {
-    const analyticsUrl = `/analytics?session_id=${sessionId}&results=${encodeURIComponent(JSON.stringify(profilingResults))}`;
+    const analyticsUrl = `/analytics`;
     window.open(analyticsUrl, '_blank');
   };
   
@@ -203,7 +204,9 @@ export default function Dashboard() {
                   </button>
                 </div>
               </div>
-              {parseArgs[selectedFilePath] && (
+              {parseArgs[selectedFilePath] && parseArgs[selectedFilePath].length!=0 &&
+              (
+                <>
                 <div className="mt-6 space-y-4">
                   <h4 className="text-lg font-semibold text-gray-800 mb-2">Parameters</h4>
                   {parseArgs[selectedFilePath].map((param, index) => (
@@ -215,15 +218,19 @@ export default function Dashboard() {
                     />
                   ))}
                 </div>
-              )}
+              
+
               <button
                 className="mt-6 bg-purple-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-purple-700 transition"
                 onClick={handleStartProfiling}
               >
+                
                 Start Profiling
-              </button>
+              </button> </>)
+}
             </div>
-          )}
+          )
+          }
         </div>
       )}
 
