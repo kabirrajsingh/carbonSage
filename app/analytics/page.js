@@ -6,46 +6,32 @@ import TimeSeriesGraph from '../components/TimeSeriesGraph';
 import { API_ENDPOINTS } from '../config/appConfig';
 import { useSession } from '../context/SessionContext';
 import FunctionProfileTable from '../components/FunctionProfileTable';
+
 const AnalyticsPage = () => {
     const { sessionId, hashToLine, setHashToLine } = useSession();
-    useEffect(() => {
-        console.log(sessionId)
-    }, [sessionId]);
-    
     const [data, setData] = useState({});
-    useEffect(() => {
-      console.log(data)
-  }, [data]);
-    const attributes = ['cpu_percent', 'iteration', 'pageins', 'pfaults', 'rss', 'vms'];
-  const [functionMap, setFunctionMap] = useState([])
+    const [functionMap, setFunctionMap] = useState([]);
+    const [averageValues, setAverageValues] = useState({});
+
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch data from /analyze_profile
                 const responseData = await fetch(API_ENDPOINTS.ANALYZE_PROFILE, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ session_id: sessionId }),
                 });
                 const resultData = await responseData.json();
                 setData(resultData);
-                
 
-                // Fetch hash_to_line from /get_hash_to_lineno_fullproj if not already in context
-                // if (Object.keys(hashToLine).length === 0) {
-                if(true){
+                if (true) {
                     const responseHashToLine = await fetch(API_ENDPOINTS.GET_HASH_TO_LINENO, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ session_id: sessionId }),
                     });
                     const resultHashToLine = await responseHashToLine.json();
-                    const hashToLinePart = await resultHashToLine["hash_to_lineno_fullproj"];
-                    console.log(hashToLinePart);
+                    const hashToLinePart = resultHashToLine["hash_to_lineno_fullproj"];
                     setHashToLine(hashToLinePart);
                 }
 
@@ -56,6 +42,14 @@ const AnalyticsPage = () => {
 
         fetchData();
     }, [sessionId]);
+
+    useEffect(() => {
+        setFunctionMap(data["function_wise_energy_and_avg"]);
+    }, [data]);
+
+    useEffect(() => {
+        setAverageValues(data["all_function_avg"]);
+    }, [data]);
 
     const timeSeriesData = data.profiletime_to_function || {}; 
     const functionProfileMap = data.function_profile_map || {}; 
@@ -79,39 +73,37 @@ const AnalyticsPage = () => {
     const { start, end } = getTimeRange();
 
     return (
-        <div className="p-8 bg-gradient-to-r from-gray-100 to-gray-300 min-h-screen">
-            <div className="max-w-7xl mx-auto">
-                <h1 className="text-4xl font-extrabold mb-8 text-gray-900 text-center">Analytics Dashboard</h1>
+        <div className="p-8 bg-gradient-to-r from-gray-50 to-gray-200 min-h-screen">
+            <div className="max-w-6xl mx-auto">
+                <h1 className="text-5xl font-extrabold mb-8 text-gray-900 text-center">Analytics Dashboard</h1>
                 <p className="text-xl mb-6 text-gray-700 text-center">
-                    Data from: <span className="font-bold text-gray-900">{start}</span> to <span className="font-bold text-gray-900">{end}</span>
+                    Data from <span className="font-semibold text-gray-900">{start}</span> to <span className="font-semibold text-gray-900">{end}</span>
                 </p>
-                <div className="analytics-page-container">
-            
-            <FunctionProfileTable functionProfileMap={functionMap} />
-            
-        </div>
-                <div className="mb-12">
-                    <h2 className="text-3xl font-extrabold mb-6 text-gray-800">Function Profile Details</h2>
-                    <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                <div className="mb-8">
+                    <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-300">
+                        <FunctionProfileTable functionParams={functionMap} averageValues={averageValues} />
+                    </div>
+                </div>
+                <div className="mb-8">
+                    <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-300">
                         {Object.keys(functionProfileMap).length > 0 ? (
-                          
-                            <HashTable  functionProfileMap={functionProfileMap} />
+                            <HashTable functionProfileMap={functionProfileMap} />
                         ) : (
                             <p className="text-center text-gray-500">No function profile data available.</p>
                         )}
                     </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    {attributes.map((attribute) => {
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+                    {['cpu_percent', 'iteration', 'pageins', 'pfaults', 'rss', 'vms'].map((attribute) => {
                         const { min, max, avg } = getSummaryStats(attribute);
                         return (
-                            <div key={attribute} className="bg-white p-6 rounded-lg shadow-lg border border-gray-200 transition-transform transform hover:scale-105">
-                                <h2 className="text-2xl font-semibold mb-6 capitalize text-gray-700">{attribute.replace('_', ' ')}</h2>
+                            <div key={attribute} className="bg-white p-6 rounded-lg shadow-lg border border-gray-300 transition-transform transform hover:scale-105">
+                                <h2 className="text-2xl font-semibold mb-4 text-gray-800 capitalize">{attribute.replace('_', ' ')}</h2>
                                 <TimeSeriesGraph data={timeSeriesData} attribute={attribute} />
-                                <div className="mt-6 text-gray-800">
-                                    <p className="text-lg"><span className="font-bold">Min:</span> {min}</p>
-                                    <p className="text-lg"><span className="font-bold">Max:</span> {max}</p>
-                                    <p className="text-lg"><span className="font-bold">Average:</span> {avg}</p>
+                                <div className="mt-4 text-gray-800">
+                                    <p className="text-lg"><span className="font-semibold">Min:</span> {min}</p>
+                                    <p className="text-lg"><span className="font-semibold">Max:</span> {max}</p>
+                                    <p className="text-lg"><span className="font-semibold">Average:</span> {avg}</p>
                                 </div>
                             </div>
                         );

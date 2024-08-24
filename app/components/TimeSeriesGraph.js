@@ -19,6 +19,9 @@ ChartJS.register(
 );
 
 const TimeSeriesGraph = ({ data, attribute }) => {
+  console.log(data);
+  console.log(attribute);
+
   const timestamps = Object.keys(data);
   if (timestamps.length === 0) {
     return (
@@ -33,26 +36,49 @@ const TimeSeriesGraph = ({ data, attribute }) => {
     );
   }
 
-  const values = timestamps.map(timestamp => data[timestamp].profile_log[attribute]);
-  const startDate = new Date(timestamps[0]);
-  const endDate = new Date(timestamps[timestamps.length - 1]);
+  // Process data to handle different function_id segments
+  const segments = [];
+  let currentSegment = null;
+
+  timestamps.forEach(timestamp => {
+    const { function_id, profile_log } = data[timestamp];
+    const value = profile_log[attribute];
+
+    if (currentSegment && currentSegment.function_id === function_id) {
+      currentSegment.data.push({ x: new Date(timestamp), y: value });
+    } else {
+      if (currentSegment) {
+        segments.push(currentSegment);
+      }
+      currentSegment = {
+        function_id,
+        data: [{ x: new Date(timestamp), y: value }],
+        color: getColorForFunctionId(function_id) // Get color based on function_id
+      };
+    }
+  });
+
+  if (currentSegment) {
+    segments.push(currentSegment);
+  }
+
+  // Create dataset for each segment
+  const datasets = segments.map(segment => ({
+    label: `Function ID: ${segment.function_id}`,
+    data: segment.data,
+    borderColor: segment.color,
+    backgroundColor: `${segment.color}80`, // Lighter color for fill
+    borderWidth: 2,
+    pointBackgroundColor: segment.color,
+    pointBorderColor: '#fff',
+    pointBorderWidth: 1,
+    pointRadius: 3,
+    fill: true,
+  }));
 
   const chartData = {
-    labels: timestamps,
-    datasets: [
-      {
-        label: attribute,
-        data: values,
-        borderColor: '#4CAF50',
-        backgroundColor: 'rgba(76, 175, 80, 0.2)', // Lighter color for fill
-        borderWidth: 2,
-        pointBackgroundColor: '#4CAF50',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 1,
-        pointRadius: 3,
-        fill: true, // Enable the area fill under the line
-      },
-    ],
+    labels: timestamps.map(ts => new Date(ts)),
+    datasets,
   };
 
   const options = {
@@ -127,13 +153,23 @@ const TimeSeriesGraph = ({ data, attribute }) => {
     <div className="w-full max-w-4xl mx-auto p-4 bg-white rounded-lg shadow-lg border border-gray-200">
       <div className="text-center mb-4">
         <h2 className="text-2xl font-semibold text-gray-800">{attribute.replace('_', ' ')}</h2>
-        <p className="text-gray-600">From {startDate.toLocaleString()} to {endDate.toLocaleString()}</p>
+        <p className="text-gray-600">From {new Date(timestamps[0]).toLocaleString()} to {new Date(timestamps[timestamps.length - 1]).toLocaleString()}</p>
       </div>
       <div className="p-4">
         <Line data={chartData} options={options} />
       </div>
     </div>
   );
+};
+
+// Helper function to get color for each function_id
+const getColorForFunctionId = (functionId) => {
+  const colors = {
+    "19555": "#4CAF50",
+    "41611": "#FF5722",
+    // Add more mappings if necessary
+  };
+  return colors[functionId] || '#2196F3'; // Default color if function_id not found
 };
 
 export default TimeSeriesGraph;

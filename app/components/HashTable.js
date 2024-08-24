@@ -48,8 +48,8 @@ const HashTable = ({ functionProfileMap, codeFiles }) => {
     const codeLines = fileContent.split('\n');
     const highlightedLines = codeLines
       .slice(fromLine - 1, toLine)
-      .map(line => `<span class="bg-yellow-200">${line}</span>`)
-      .join('\n');
+      .map(line => `<div class="bg-yellow-200">${line}</div>`)
+      .join('');
     return highlightedLines;
   };
 
@@ -132,6 +132,8 @@ const HashTable = ({ functionProfileMap, codeFiles }) => {
 
   return (
     <div className="overflow-x-auto">
+      <div className="bg-white shadow-md rounded-lg p-6 mb-6 border border-gray-300">
+      <h2 className="text-3xl font-extrabold mb-6 text-gray-800">Function Profile Details</h2>
       <table className="min-w-full bg-white border border-gray-300">
         <thead>
           <tr className="bg-gray-200">
@@ -277,6 +279,7 @@ const HashTable = ({ functionProfileMap, codeFiles }) => {
       
       
       )}
+    </div>
     </div>
   );
 };
