@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [profilingInProgress, setProfilingInProgress] = useState(false);
   const [profilingMessage, setProfilingMessage] = useState('');
   const [profilingResults, setProfilingResults] = useState([]);
+  const [showPopup, setShowPopup] = useState(false)
   const router = useRouter();
 
   useEffect(() => {
@@ -56,6 +57,7 @@ export default function Dashboard() {
             setProfilingResults([analysisData]);
             setProfilingMessage(''); 
             setProfilingInProgress(false);
+            setShowPopup(true);
           } else if (response.status === 501) {
             setProfilingMessage('Profiling is still in progress.');
           } else if (response.status === 300) {
@@ -159,73 +161,92 @@ export default function Dashboard() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar files={projectFiles} onFileClick={handleFileClick} selectedFilePath={selectedFilePath} />
+  {/* Sidebar */}
+  {showPopup && (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+        <h2 className="text-lg font-semibold text-gray-800">
+          Analytics Completed
+        </h2>
+        <p className="mt-2 text-gray-600">
+          The results have been sent to <strong>developerkabir@gmail.com</strong>.
+        </p>
+        <p className="mt-1 text-sm text-gray-500">
+          Powered by <strong>OpenText API</strong>.
+        </p>
+        <button
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+          onClick={() => setShowPopup(false)}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  )}
+  
+  <Sidebar files={projectFiles} onFileClick={handleFileClick} selectedFilePath={selectedFilePath} />
 
-      <div className="flex-1 p-8 space-y-6">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">Dashboard</h1>
-        <p className="text-xl text-gray-600 mb-6">Session ID: <span className="font-medium">{sessionId}</span></p>
+  <div className="flex-1 p-8 space-y-6">
+    <h1 className="text-4xl font-bold text-gray-800 mb-4">Dashboard</h1>
+    <p className="text-xl text-gray-600 mb-6">Session ID: <span className="font-medium">{sessionId}</span></p>
 
-        <div className="flex gap-4 mb-6">
-          <button
-            className="bg-blue-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-blue-700 transition"
-            onClick={handleUploadAnotherProject}
-          >
-            Upload Another Project
-          </button>
-          {/* <button
-            className="bg-gray-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-gray-700 transition"
-            onClick={toggleFilesVisibility}
-          >
-            {showFiles ? 'Hide' : 'Show'} Project Files
-          </button> */}
-          <button
-            className="bg-green-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-green-700 transition"
-            onClick={handleProcessProject}
-          >
-            Process Project Folder
-          </button>
+    <div className="flex gap-4 mb-6">
+      <button
+        className="bg-blue-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-blue-700 transition"
+        onClick={handleUploadAnotherProject}
+      >
+        Upload Another Project
+      </button>
+      <button
+        className="bg-green-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-green-700 transition"
+        onClick={handleProcessProject}
+      >
+        Process Project Folder
+      </button>
+    </div>
+
+    {selectedFilePath && (
+      <div className="border-t border-gray-300 pt-6">
+        <h3 className="text-2xl font-semibold text-gray-700 mb-4">File: {selectedFilePath}</h3>
+        <div className="relative bg-white rounded-lg overflow-hidden shadow-md">
+          <div className="p-4 bg-gray-100">
+            <pre className="whitespace-pre-wrap text-sm text-gray-800">{selectedFileContent}</pre>
+          </div>
+          <div className="absolute top-2 right-2">
+            <button
+              className="text-gray-600 hover:text-gray-800"
+              onClick={() => setSelectedFilePath('')}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
         </div>
-
-        {selectedFilePath && (
-          <div className="border-t border-gray-300 pt-6">
-            <h3 className="text-2xl font-semibold text-gray-700 mb-2">File: {selectedFilePath}</h3>
-            <div className="relative bg-gray-100 rounded-lg overflow-auto">
-              <pre className="whitespace-pre-wrap p-4 text-sm text-gray-800">{selectedFileContent}</pre>
-              <div className="absolute top-2 right-2">
-                <button
-                  className="text-gray-600 hover:text-gray-800"
-                  onClick={() => setSelectedFilePath('')}
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                  </svg>
-                </button>
-              </div>
+        {parseArgs[selectedFilePath] && parseArgs[selectedFilePath].length !== 0 && (
+          <div className="mt-6">
+            <h4 className="text-lg font-semibold text-gray-800 mb-4">Parameters</h4>
+            <div className="space-y-4">
+              {parseArgs[selectedFilePath].map((param, index) => (
+                <ParameterInput
+                  key={index}
+                  filePath={selectedFilePath}
+                  param={param}
+                  handleUserInputChange={handleUserInputChange}
+                />
+              ))}
             </div>
-            {parseArgs[selectedFilePath] && parseArgs[selectedFilePath].length !== 0 &&
-              <>
-                <div className="mt-6 space-y-4">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-2">Parameters</h4>
-                  {parseArgs[selectedFilePath].map((param, index) => (
-                    <ParameterInput
-                      key={index}
-                      filePath={selectedFilePath}
-                      param={param}
-                      handleUserInputChange={handleUserInputChange}
-                    />
-                  ))}
-                </div>
-                <button
-                  className="mt-6 bg-purple-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-purple-700 transition"
-                  onClick={handleStartProfiling}
-                >
-                  Start Profiling
-                </button>
-              </>
-            }
+            <button
+              className="mt-6 bg-purple-600 text-white py-2 px-6 rounded-lg shadow-md hover:bg-purple-700 transition"
+              onClick={handleStartProfiling}
+            >
+              Start Profiling
+            </button>
           </div>
         )}
+      </div>
+    )}
+
 
         <div className="w-full max-w-5xl bg-white shadow-xl rounded-lg p-6 space-y-6 mt-6">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">Profiling Status</h2>
