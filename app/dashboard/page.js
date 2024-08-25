@@ -97,6 +97,7 @@ export default function Dashboard() {
 
     const data = await response.json();
     setParseArgs(data.parse_args_fullproj);
+    console.log(data)
   };
 
   const handleUserInputChange = (filePath, paramName, value) => {

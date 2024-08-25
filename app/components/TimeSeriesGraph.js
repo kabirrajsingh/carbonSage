@@ -3,7 +3,6 @@ import React from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, LineElement, PointElement, Title, Tooltip, Legend, TimeScale, Filler } from 'chart.js';
 import 'chartjs-adapter-date-fns'; // Import this adapter to handle time scales
-import 'tailwindcss/tailwind.css';
 
 // Register ChartJS components including Filler for area fill
 ChartJS.register(
