@@ -22,21 +22,36 @@ export default function FileUpload() {
     formData.append('folder', file);
 
     try {
-      const response = await fetch(`${API_ENDPOINTS.UPLOAD_FILE}`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (response.ok) {
-        const { sessionId } = await response.json();
+      let response;
+      
+      if (process.env.NEXT_PUBLIC_NODE_ENV === 'prod') {
+        // Fetch response from a local file in production
+        const fileData = await fetch('/data/createSession.json');
+        console.log(fileData)
+        response = await fileData.json();
+      } else {
+        // Make the API call in non-production environments
+        response = await fetch(`${API_ENDPOINTS.UPLOAD_FILE}`, {
+          method: 'POST',
+          body: formData,
+        });
+      }
+    
+      if (response.ok || process.env.NEXT_PUBLIC_NODE_ENV === 'prod') {
+        const { sessionId } = process.env.NEXT_PUBLIC_NODE_ENV === 'prod' 
+            ? response // This is incorrect in its current form
+            : await response.json();
         setSessionId(sessionId);
         router.push('/dashboard');
-      } else {
+    } else {
         const errorText = await response.text();
         setError(`Upload failed: ${errorText}`);
-      }
+    }
+    
     } catch (error) {
       setError(`Error uploading file: ${error.message}`);
     }
+    
   };
 
   return (

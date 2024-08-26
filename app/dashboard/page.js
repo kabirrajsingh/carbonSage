@@ -9,6 +9,9 @@ import { API_ENDPOINTS } from '../config/appConfig';
 import ProjectFileList from '../components/ProjectFileList';
 import Sidebar from '../components/SideBar';
 import ParameterInput from '../components/ParameterInput';
+import getAllProjectFiles from '../../public/data/getAllProjectFiles';
+
+
 export default function Dashboard() {
   const { sessionId, logout } = useSession();
   const { projectFiles, setProjectFiles, showFiles, setShowFiles } = useProjectFiles();
@@ -24,6 +27,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchProjectFiles = async () => {
+      if (process.env.NEXT_PUBLIC_NODE_ENV === "prod") {
+        // Use the preloaded JSON data in production
+        
+        setProjectFiles(getAllProjectFiles);
+      }else{
+        
+      
       const response = await fetch(API_ENDPOINTS.GET_ALL_PROJECT_FILES, {
         method: 'POST',
         headers: {
@@ -33,6 +43,7 @@ export default function Dashboard() {
       });
       const data = await response.json();
       setProjectFiles(data);
+    }
     };
 
     fetchProjectFiles();
@@ -40,41 +51,55 @@ export default function Dashboard() {
 
   useEffect(() => {
     let intervalId;
-
+  
     if (sessionId) {
       intervalId = setInterval(async () => {
         try {
-          const response = await fetch(API_ENDPOINTS.ANALYZE_PROFILE, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ session_id: sessionId }),
-          });
-
-          if (response.ok) {
-            const analysisData = await response.json();
-            setProfilingResults([analysisData]);
-            setProfilingMessage(''); 
-            setProfilingInProgress(false);
-            setShowPopup(true);
-          } else if (response.status === 501) {
-            setProfilingMessage('Profiling is still in progress.');
-          } else if (response.status === 300) {
-            setProfilingMessage('No process to analyze.');
+          let analysisData;
+  
+          if (process.env.NEXT_PUBLIC_NODE_ENV === 'prod') {
+            // In production, get the response from the local file
+            const analyzeProfile = await fetch('/data/analyzeProfile.json');
+            analysisData = analyzeProfile;
           } else {
-            setProfilingMessage('An unexpected error occurred.');
+            const response = await fetch(API_ENDPOINTS.ANALYZE_PROFILE, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ session_id: sessionId }),
+            });
+  
+            if (response.ok) {
+              analysisData = await response.json();
+            } else if (response.status === 501) {
+              setProfilingMessage('Profiling is still in progress.');
+              return;
+            } else if (response.status === 300) {
+              setProfilingMessage('No process to analyze.');
+              return;
+            } else {
+              setProfilingMessage('An unexpected error occurred.');
+              return;
+            }
           }
+  
+          // Set the state with the analysis data
+          setProfilingResults([analysisData]);
+          setProfilingMessage('');
+          setProfilingInProgress(false);
+          setShowPopup(true);
+  
         } catch (error) {
           console.error("Error fetching analysis data:", error);
           setProfilingMessage('An error occurred while polling for results.');
         }
-      }, 5000); 
-
+      }, 15000);
+  
       return () => clearInterval(intervalId);
     }
   }, [sessionId]);
-
+  
   const handleUploadAnotherProject = () => {
     logout();
   };
@@ -89,18 +114,29 @@ export default function Dashboard() {
   };
 
   const handleProcessProject = async () => {
-    const response = await fetch(API_ENDPOINTS.PROCESS_PROJECT_FOLDER, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ session_id: sessionId }),
-    });
-
-    const data = await response.json();
+    let data;
+  
+    if (process.env.NEXT_PUBLIC_NODE_ENV === 'prod') {
+      // In production, make the API call
+      const response = await fetch('/data/processProjectFolder.json');
+      data = await response.json();
+    } else {
+      // In development or other environments, get data from a local file
+      const response = await fetch(API_ENDPOINTS.PROCESS_PROJECT_FOLDER, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+      
+      data = await response.json();
+    }
+  
     setParseArgs(data.parse_args_fullproj);
-    console.log(data)
+    console.log(data);
   };
+  
 
   const handleUserInputChange = (filePath, paramName, value) => {
     setUserInputs(prev => ({
@@ -137,17 +173,25 @@ export default function Dashboard() {
     };
 
     try {
-      await fetch(API_ENDPOINTS.START_PROFILING, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          session_id: sessionId,
-          caller_metadata: callerMetadata,
-        }),
-      });
-
+      let response;
+  
+      if (process.envNEXT_PUBLIC_NODE_ENV === 'prod') {
+        // Fetch response from a file in production
+        response = await fetch('/data/startProfiling');
+      } else {
+        // Make API call in non-production environments
+        response = await fetch(API_ENDPOINTS.START_PROFILING, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            session_id: sessionId,
+            caller_metadata: callerMetadata,
+          }),
+        });
+      }
+  
       alert("Profiling is in progress. Please refrain from sending duplicate requests.");
     } catch (error) {
       console.error("Error starting profiling:", error);

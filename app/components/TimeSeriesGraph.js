@@ -18,8 +18,6 @@ ChartJS.register(
 );
 
 const TimeSeriesGraph = ({ data, attribute }) => {
-  console.log(data);
-  console.log(attribute);
 
   const timestamps = Object.keys(data);
   if (timestamps.length === 0) {

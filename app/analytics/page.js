@@ -16,28 +16,49 @@ const AnalyticsPage = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const responseData = await fetch(API_ENDPOINTS.ANALYZE_PROFILE, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: sessionId }),
-                });
-                const resultData = await responseData.json();
-                setData(resultData);
-
-                if (true) {
-                    const responseHashToLine = await fetch(API_ENDPOINTS.GET_HASH_TO_LINENO, {
+                let responseData;
+                
+                if (process.env.NEXT_PUBLIC_NODE_ENV === 'prod') {
+                    // Fetch the response from a local file in production
+                    const response = await fetch('/data/analyzeProfile.json');
+                    responseData = await response.json();
+                } else {
+                    // Make the API call in non-production environments
+                    const response = await fetch(API_ENDPOINTS.ANALYZE_PROFILE, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ session_id: sessionId }),
                     });
-                    const resultHashToLine = await responseHashToLine.json();
-                    const hashToLinePart = resultHashToLine["hash_to_lineno_fullproj"];
+                    responseData = await response.json();
+                }
+                
+                setData(responseData);
+            
+                if (true) {
+                    let hashToLine;
+                    
+                    if (process.env.NEXT_PUBLIC_NODE_ENV === 'prod') {
+                        // Fetch the response from a local file in production
+                        const response = await fetch('/data/hashToLine.json');
+                        hashToLine = await response.json();
+                    } else {
+                        // Make the API call in non-production environments
+                        const response = await fetch(API_ENDPOINTS.GET_HASH_TO_LINENO, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ session_id: sessionId }),
+                        });
+                        hashToLine = await response.json();
+                    }
+            
+                    const hashToLinePart = hashToLine["hash_to_lineno_fullproj"];
+                    console.log(hashToLinePart)
                     setHashToLine(hashToLinePart);
                 }
-
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
+            
         };
 
         fetchData();

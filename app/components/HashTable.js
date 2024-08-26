@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useSession } from '../context/SessionContext';
 import { API_ENDPOINTS } from '../config/appConfig';
 import CodeModal from './CodeModal';
-
+import getAllProjectFiles from '../../public/data/getAllProjectFiles';
 const HashTable = ({ functionProfileMap, codeFiles }) => {
   const { sessionId, hashToLine } = useSession();
   const [projectFiles, setProjectFiles] = useState({});
@@ -20,28 +20,31 @@ const HashTable = ({ functionProfileMap, codeFiles }) => {
   }, [hashToLine])
   
   useEffect(() => {
-    if (sessionId) {
-      const fetchProjectFiles = async () => {
-        try {
-          const response = await fetch(API_ENDPOINTS.GET_ALL_PROJECT_FILES, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ session_id: sessionId }),
-          });
-          if (!response.ok) {
-            throw new Error('Failed to fetch project files');
-          }
-          const data = await response.json();
-          setProjectFiles(data);
-        } catch (error) {
-          console.error('Error fetching project files:', error);
-        }
-      };
-      fetchProjectFiles();
+    const fetchProjectFiles = async () => {
+      if (process.env.NEXT_PUBLIC_NODE_ENV === "prod") {
+        // Use the preloaded JSON data in production
+        // projectF-await fetch('/data/getAllProjectFiles.json')
+        // projAwait=await projectF.json()
+        // setProjectFiles(projAwait);
+        setProjectFiles(getAllProjectFiles);
+      }else{
+         
+      
+      const response = await fetch(API_ENDPOINTS.GET_ALL_PROJECT_FILES, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+      const data = await response.json();
+      setProjectFiles(data);
     }
+    };
+
+    fetchProjectFiles();
   }, [sessionId]);
+
 
   const getHighlightedCodeSnippet = (source, fromLine, toLine) => {
     const fileContent = projectFiles[source] || '';
@@ -72,20 +75,31 @@ const HashTable = ({ functionProfileMap, codeFiles }) => {
     if (selectedCode) {
       setLoading(true);
       try {
-        const response = await fetch(API_ENDPOINTS.OPTIMIZE, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            session_id: sessionId,
-            function_id: selectedCode.hash,
-          }),
-        });
-        if (!response.ok) {
-          throw new Error('Failed to optimize code');
+        let data;
+        if (process.env.NEXT_PUBLIC_NODE_ENV === "prod") {
+          // Fetch from a file in production
+          const response = await fetch('/data/optimize.json');
+          if (!response.ok) {
+            throw new Error('Failed to load optimize code response from file');
+          }
+          data = await response.json();
+        } else {
+          // Make an API call in other environments
+          const response = await fetch(API_ENDPOINTS.OPTIMIZE, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              session_id: sessionId,
+              function_id: selectedCode.hash,
+            }),
+          });
+          if (!response.ok) {
+            throw new Error('Failed to optimize code');
+          }
+          data = await response.json();
         }
-        const data = await response.json();
         setOptimizedCode(data.optimized_code);
       } catch (error) {
         console.error('Error optimizing code:', error);
@@ -94,6 +108,7 @@ const HashTable = ({ functionProfileMap, codeFiles }) => {
       }
     }
   };
+  
 
   const sortedRows = useMemo(() => {
     let sortableItems = [...Object.keys(functionProfileMap)];

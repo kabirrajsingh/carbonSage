@@ -19,6 +19,7 @@ export default function Home() {
       <div className="bg-white shadow-lg rounded-lg p-8  mx-auto text-center">
         <h1 className="text-4xl font-extrabold text-gray-900 mb-6">Welcome to CarbonSage</h1>
         <p className="text-lg text-gray-600 mb-6">Your tool for tracking and reducing carbon emissions. Upload your project to get started.</p>
+        
         <FileUpload />
       </div>
     </div>

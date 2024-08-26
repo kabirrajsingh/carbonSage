@@ -1,0 +1,81 @@
+{
+    "hash_to_lineno_fullproj": {
+      "4247": [
+        26,
+        29,
+        "../target_projects/proj_13f01354-0436-4cc4-b95e-225c63e5db0d/proj1/lib2.py"
+      ],
+      "9422": [
+        32,
+        35,
+        "../target_projects/proj_13f01354-0436-4cc4-b95e-225c63e5db0d/proj1/lib2.py"
+      ],
+      "9996": [
+        53,
+        58,
+        "../target_projects/proj_13f01354-0436-4cc4-b95e-225c63e5db0d/proj1/lib1.py"
+      ],
+      "13634": [
+        4,
+        11,
+        "../target_projects/proj_13f01354-0436-4cc4-b95e-225c63e5db0d/proj1/lib2.py"
+      ],
+      "17049": [
+        5,
+        15,
+        "../target_projects/proj_13f01354-0436-4cc4-b95e-225c63e5db0d/proj1/lib1.py"
+      ],
+      "19055": [
+        14,
+        23,
+        "../target_projects/proj_13f01354-0436-4cc4-b95e-225c63e5db0d/proj1/lib2.py"
+      ],
+      "19555": [
+        18,
+        28,
+        "../target_projects/proj_13f01354-0436-4cc4-b95e-225c63e5db0d/proj1/lib1.py"
+      ],
+      "41611": [
+        31,
+        50,
+        "../target_projects/proj_13f01354-0436-4cc4-b95e-225c63e5db0d/proj1/lib1.py"
+      ]
+    },
+    "interim_project_path": "../interim_projects/proj_13f01354-0436-4cc4-b95e-225c63e5db0d",
+    "parse_args_fullproj": {
+      "../target_projects/proj_13f01354-0436-4cc4-b95e-225c63e5db0d/proj1/lib1.py": [],
+      "../target_projects/proj_13f01354-0436-4cc4-b95e-225c63e5db0d/proj1/lib2.py": [],
+      "../target_projects/proj_13f01354-0436-4cc4-b95e-225c63e5db0d/proj1/main.py": [
+        {
+          "default": null,
+          "help": "Power of CPU bound task",
+          "name": "cpu_power",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "default": null,
+          "help": "Power of memory bound task",
+          "name": "memory_power",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "default": null,
+          "help": "Power of I/O bound task",
+          "name": "io_power",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "default": null,
+          "help": "Power of 10 for sorting list",
+          "name": "power_of_10",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "../target_projects/proj_13f01354-0436-4cc4-b95e-225c63e5db0d/proj1/test/test.py": []
+    },
+    "project_path": "../target_projects/proj_13f01354-0436-4cc4-b95e-225c63e5db0d"
+  }
